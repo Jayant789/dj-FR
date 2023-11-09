@@ -19,10 +19,11 @@ class SimpleFacerec:
         :param images_path:
         :return:
         """
+        #
         # Load Images
         # images_path = ".\images"
         images_path = glob.glob(os.path.join(images_path, "*.*"))
-        print(images_path)
+        # print(images_path)
 
         print("{} encoding images found.".format(len(images_path)))
 
@@ -36,7 +37,7 @@ class SimpleFacerec:
             (filename, ext) = os.path.splitext(basename)
             # Get encoding
             img_encoding = face_recognition.face_encodings(rgb_img)[0]
-
+            print(filename)
             # Store file name and file encoding
             self.known_face_encodings.append(img_encoding)
             self.known_face_names.append(filename)

@@ -5,6 +5,9 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import datetime
 import time
+from django.core.servers.basehttp import WSGIServer
+
+WSGIServer.handle_error = lambda *args, **kwargs: None
 
 
 class VideoCamera(object):
@@ -34,7 +37,8 @@ class VideoCamera(object):
         self.sfr.load_encoding_images(
             "C:/Users/jayan/Desktop/Argenbright/dj-FR/faceRecog/api/images"
         )  # Load your face encodings
-        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        print("encoded")
+        self.cap = cv2.VideoCapture(cv2.CAP_V4L2)
         self.last_data_time = time.time()
 
     def __del__(self):
@@ -42,6 +46,7 @@ class VideoCamera(object):
 
     def generate_frames(self):
         while True:
+            start_time = time.time()
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -101,4 +106,9 @@ class VideoCamera(object):
                 break
 
             frame = buffer.tobytes()
+            ##print("test")
+
+            processing_time = time.time() - start_time
+            print(f"Time taken for frame processing: {processing_time:.5f} seconds")
+
             yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
