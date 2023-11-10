@@ -65,7 +65,7 @@ class VideoCamera(object):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 0), 4)
 
                 else:
-                    print(name + "else")
+                    # print(name + "else")
                     cv2.putText(
                         frame,
                         name,
