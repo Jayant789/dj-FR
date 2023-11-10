@@ -6,11 +6,11 @@ from django.http import HttpResponse
 
 @xframe_options_exempt
 def video_feed(request):
-    # Get the camera index from the request parameters (default to 0 if not provided)
-    camera_index = int(request.GET.get("camera_index", 0))
-
-    # Create an instance of VideoCamera with the specified camera index
-    video_camera = VideoCamera(camera_index=camera_index)
+    camera_index = int(
+        request.GET.get("camera", 0)
+    )  # Default to camera index 0 if not provided
+    video_camera = VideoCamera(camera_index)
+    # video_camera.switch_camera()
 
     response = StreamingHttpResponse(
         video_camera.generate_frames(),
