@@ -5,6 +5,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import datetime
 import time
+import os
 
 
 class VideoCamera(object):
@@ -33,9 +34,13 @@ class VideoCamera(object):
 
         self.db = firestore.client()
         self.sfr = SimpleFacerec()
-        self.sfr.load_encoding_images(
-            "C:/Users/jayan/Desktop/Argenbright/dj-FR/faceRecog/api/images"
-        )
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+
+        # Construct the path to the images folder relative to the script directory
+        images_folder_path = os.path.join(script_directory, "images")
+
+        self.sfr.load_encoding_images(images_folder_path)
+
         self.cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
         self.last_data_time = time.time()
 
