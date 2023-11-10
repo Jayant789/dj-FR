@@ -22,7 +22,7 @@ class SimpleFacerec:
         # Load Images
         # images_path = ".\images"
         images_path = glob.glob(os.path.join(images_path, "*.*"))
-        print(images_path)
+        # print(images_path)
 
         print("{} encoding images found.".format(len(images_path)))
 
@@ -46,8 +46,6 @@ class SimpleFacerec:
         small_frame = cv2.resize(
             frame, (0, 0), fx=self.frame_resizing, fy=self.frame_resizing
         )
-        # Find all the faces and face encodings in the current frame of video
-        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
         face_locations = face_recognition.face_locations(rgb_small_frame)
         face_encodings = face_recognition.face_encodings(
@@ -55,22 +53,23 @@ class SimpleFacerec:
         )
 
         face_names = []
+        face_accuracies = []  # Add this line
+
         for face_encoding, face_loc in zip(face_encodings, face_locations):
             y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
             face_width = x2 - x1
             face_height = y2 - y1
 
-            min_face_size_threshold = (
-                50,
-                50,
-            )  # Set your minimum face size threshold (in pixels)
+            min_face_size_threshold = (50, 50)
 
             if (
                 face_width >= min_face_size_threshold[0]
                 and face_height >= min_face_size_threshold[1]
             ):
-                # This face meets the size threshold and is considered valid
-                # You can perform further processing or recognition here
+                y1 = int(y1 / self.frame_resizing)
+                x2 = int(x2 / self.frame_resizing)
+                y2 = int(y2 / self.frame_resizing)
+                x1 = int(x1 / self.frame_resizing)
                 matches = face_recognition.compare_faces(
                     self.known_face_encodings, face_encoding
                 )
@@ -83,9 +82,15 @@ class SimpleFacerec:
                     best_match_index = np.argmin(face_distances)
                     if matches[best_match_index]:
                         name = self.known_face_names[best_match_index]
-                    face_names.append(name)
+                        accuracy = round(
+                            (1 - face_distances[best_match_index]) * 100, 2
+                        )  # Round to 2 decimal points
+                        face_accuracies.append(accuracy)
+                    else:
+                        face_accuracies.append(None)
 
-        # Convert to numpy array to adjust coordinates with frame resizing quickly
-        face_locations = np.array(face_locations)
-        face_locations = face_locations / self.frame_resizing
-        return face_locations.astype(int), face_names
+                face_names.append(name)
+            else:
+                face_accuracies.append(None)
+
+        return face_locations, face_names, face_accuracies

@@ -48,29 +48,23 @@ class VideoCamera(object):
             if not ret:
                 break
 
-            face_locations, face_names = self.sfr.detect_known_faces(frame)
+            face_locations, face_names, face_accuracies = self.sfr.detect_known_faces(
+                frame
+            )
 
-            for face_loc, name in zip(face_locations, face_names):
+            for face_loc, name, accuracy in zip(
+                face_locations, face_names, face_accuracies
+            ):
                 y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
 
                 if name == "Unknown":
-                    # print(name + "if")
-                    cv2.putText(
-                        frame,
-                        name,
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_DUPLEX,
-                        1,
-                        (0, 200, 0),
-                        2,
-                    )
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 0), 4)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (128, 128, 128), 4)
 
                 else:
-                    # print(name + "else")
+                    display_text = f"{name} ({accuracy}%)"
                     cv2.putText(
                         frame,
-                        name,
+                        display_text,
                         (x1, y1 - 10),
                         cv2.FONT_HERSHEY_DUPLEX,
                         1,
@@ -86,6 +80,7 @@ class VideoCamera(object):
                             "Name": name,
                             "Date": datetime.now().date().strftime("%Y-%m-%d"),
                             "Time": datetime.now().time().strftime("%H:%M:%S"),
+                            "Accuracy": accuracy,
                         }
 
                         # Use a formatted timestamp as the document ID
