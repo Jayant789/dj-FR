@@ -44,6 +44,9 @@ class VideoCamera(object):
         self.sfr.load_encoding_images(images_folder_path)
 
         self.cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
+        # self.cap.set(cv2.CAP_PROP_FPS, frame_rate)  # Set the frame rate
+        self.start_time = time.time()
+        self.frames_processed = 0
         self.last_data_time = time.time()
 
         self.buffer_size = buffer_size
@@ -65,6 +68,22 @@ class VideoCamera(object):
             ret, frame = self.cap.read()
             if not ret:
                 break
+
+            # Get the current frame rate
+            # input_frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
+            self.frames_processed += 1
+            elapsed_time = time.time() - self.start_time
+            current_frame_rate = self.frames_processed / elapsed_time
+            # Display the frame rate on the frame
+            cv2.putText(
+                frame,
+                f"Frame Rate: {current_frame_rate:.2f} fps",
+                (10, 30),
+                cv2.FONT_HERSHEY_DUPLEX,
+                0.6,
+                (0, 0, 255),
+                2,
+            )
 
             face_locations, face_names, face_accuracies = self.sfr.detect_known_faces(
                 frame
