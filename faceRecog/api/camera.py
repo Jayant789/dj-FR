@@ -58,24 +58,24 @@ class VideoCamera(object):
                 break
 
             frame_count += 1
+            self.frames_processed += 1
+            elapsed_time = time.time() - self.start_time
+            current_frame_rate = self.frames_processed / elapsed_time
+
+            # Display the frame rate on the frame
+            cv2.putText(
+                frame,
+                f"Frame Rate: {current_frame_rate:.2f} fps",
+                (10, 30),
+                cv2.FONT_HERSHEY_DUPLEX,
+                0.6,
+                (0, 0, 255),
+                2,
+            )
 
             # Skip frames if needed
             if frame_count % skip_frames == 0:
                 # Get the current frame rate
-                self.frames_processed += 1
-                elapsed_time = time.time() - self.start_time
-                current_frame_rate = self.frames_processed / elapsed_time
-
-                # Display the frame rate on the frame
-                cv2.putText(
-                    frame,
-                    f"Frame Rate: {current_frame_rate:.2f} fps",
-                    (10, 30),
-                    cv2.FONT_HERSHEY_DUPLEX,
-                    0.6,
-                    (0, 0, 255),
-                    2,
-                )
 
                 (
                     face_locations,
