@@ -6,12 +6,14 @@ from firebase_admin import firestore
 from datetime import datetime
 import time
 import os
+import threading
+from queue import Queue
 
 
 class VideoCamera(object):
     firebase_initialized = False
 
-    def __init__(self, camera_index=0):
+    def __init__(self, camera_index=0, buffer_size=10):
         if not VideoCamera.firebase_initialized:
             # Initialize Firebase only if it hasn't been done already
             cred = credentials.Certificate(
@@ -47,11 +49,22 @@ class VideoCamera(object):
         self.frames_processed = 0
         self.last_data_time = time.time()
 
+        self.buffer_size = buffer_size
+        self.frame_queue = Queue(maxsize=buffer_size)
+        self.last_data_time = time.time()
+        self.stop_event = threading.Event()
+
+        # Start a separate thread for frame generation
+        self.thread = threading.Thread(target=self._generate_frames)
+        self.thread.start()
+
     def __del__(self):
+        self.stop_event.set()
+        self.thread.join()  # Wait for the thread to finish
         self.cap.release()
 
-    def generate_frames(self):
-        while True:
+    def _generate_frames(self):
+        while not self.stop_event.is_set():
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -99,29 +112,36 @@ class VideoCamera(object):
 
                     current_time = time.time()
                     if current_time - self.last_data_time >= 10:
-                        # Prepare the document data and save it to your Firestore database
                         document_data = {
                             "Name": name,
                             "Date": datetime.now().date().strftime("%Y-%m-%d"),
                             "Time": datetime.now().time().strftime("%H:%M:%S"),
                             "Accuracy": accuracy,
                         }
-
-                        # Use a formatted timestamp as the document ID
                         timestamp_id = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                        # Add the document to the "suspects" collection using the timestamp as the ID
                         self.db.collection("Suspects").document(timestamp_id).set(
                             document_data
                         )
                         print(name + " Updated in Database")
-
-                        # Update the last_data_time
                         self.last_data_time = current_time
 
-            ret, buffer = cv2.imencode(".jpg", frame)
-            if not ret:
-                break
+            if self.frame_queue.full():
+                self.frame_queue.get()  # Remove the oldest frame from the queue
+            self.frame_queue.put(frame)
 
-            frame = buffer.tobytes()
-            yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+    def generate_frames(self):
+        while not self.stop_event.is_set():
+            # Check if the buffer is full, then yield frames
+            if self.frame_queue.qsize() == self.buffer_size:
+                while not self.frame_queue.empty():
+                    frame = self.frame_queue.get()
+                    ret, buffer = cv2.imencode(".jpg", frame)
+                    if not ret:
+                        break
+                    frame_bytes = buffer.tobytes()
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                    )
+
+            time.sleep(0.001)
