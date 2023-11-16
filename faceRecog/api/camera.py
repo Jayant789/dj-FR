@@ -50,74 +50,81 @@ class VideoCamera(object):
     def __del__(self):
         self.cap.release()
 
-    def generate_frames(self):
+    def generate_frames(self, skip_frames=2):
+        frame_count = 0
         while True:
             ret, frame = self.cap.read()
             if not ret:
                 break
 
-            # Get the current frame rate
-            # input_frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
-            self.frames_processed += 1
-            elapsed_time = time.time() - self.start_time
-            current_frame_rate = self.frames_processed / elapsed_time
-            # Display the frame rate on the frame
-            cv2.putText(
-                frame,
-                f"Frame Rate: {current_frame_rate:.2f} fps",
-                (10, 30),
-                cv2.FONT_HERSHEY_DUPLEX,
-                0.6,
-                (0, 0, 255),
-                2,
-            )
+            frame_count += 1
 
-            face_locations, face_names, face_accuracies = self.sfr.detect_known_faces(
-                frame
-            )
+            # Skip frames if needed
+            if frame_count % skip_frames == 0:
+                # Get the current frame rate
+                self.frames_processed += 1
+                elapsed_time = time.time() - self.start_time
+                current_frame_rate = self.frames_processed / elapsed_time
 
-            for face_loc, name, accuracy in zip(
-                face_locations, face_names, face_accuracies
-            ):
-                y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
+                # Display the frame rate on the frame
+                cv2.putText(
+                    frame,
+                    f"Frame Rate: {current_frame_rate:.2f} fps",
+                    (10, 30),
+                    cv2.FONT_HERSHEY_DUPLEX,
+                    0.6,
+                    (0, 0, 255),
+                    2,
+                )
 
-                if name == "Unknown":
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (128, 128, 128), 4)
+                (
+                    face_locations,
+                    face_names,
+                    face_accuracies,
+                ) = self.sfr.detect_known_faces(frame)
 
-                else:
-                    display_text = f"{name} ({accuracy}%)"
-                    cv2.putText(
-                        frame,
-                        display_text,
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_DUPLEX,
-                        1,
-                        (0, 0, 200),
-                        2,
-                    )
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
+                for face_loc, name, accuracy in zip(
+                    face_locations, face_names, face_accuracies
+                ):
+                    y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
 
-                    current_time = time.time()
-                    if current_time - self.last_data_time >= 10:
-                        # Prepare the document data and save it to your Firestore database
-                        document_data = {
-                            "Name": name,
-                            "Date": datetime.now().date().strftime("%Y-%m-%d"),
-                            "Time": datetime.now().time().strftime("%H:%M:%S"),
-                            "Accuracy": accuracy,
-                        }
+                    if name == "Unknown":
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (128, 128, 128), 4)
 
-                        # Use a formatted timestamp as the document ID
-                        timestamp_id = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                        # Add the document to the "suspects" collection using the timestamp as the ID
-                        self.db.collection("Suspects").document(timestamp_id).set(
-                            document_data
+                    else:
+                        display_text = f"{name} ({accuracy}%)"
+                        cv2.putText(
+                            frame,
+                            display_text,
+                            (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_DUPLEX,
+                            1,
+                            (0, 0, 200),
+                            2,
                         )
-                        print(name + " Updated in Database")
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
 
-                        # Update the last_data_time
-                        self.last_data_time = current_time
+                        current_time = time.time()
+                        if current_time - self.last_data_time >= 10:
+                            # Prepare the document data and save it to your Firestore database
+                            document_data = {
+                                "Name": name,
+                                "Date": datetime.now().date().strftime("%Y-%m-%d"),
+                                "Time": datetime.now().time().strftime("%H:%M:%S"),
+                                "Accuracy": accuracy,
+                            }
+
+                            # Use a formatted timestamp as the document ID
+                            timestamp_id = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                            # Add the document to the "suspects" collection using the timestamp as the ID
+                            self.db.collection("Suspects").document(timestamp_id).set(
+                                document_data
+                            )
+                            print(name + " Updated in Database")
+
+                            # Update the last_data_time
+                            self.last_data_time = current_time
 
             ret, buffer = cv2.imencode(".jpg", frame)
             if not ret:
