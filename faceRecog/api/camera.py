@@ -6,6 +6,7 @@ from firebase_admin import firestore
 from datetime import datetime
 import time
 import os
+import dlib
 
 
 class VideoCamera(object):
@@ -35,7 +36,7 @@ class VideoCamera(object):
         # self.db = firestore.client()
         self.sfr = SimpleFacerec()
         script_directory = os.path.dirname(os.path.abspath(__file__))
-
+        print(dlib.DLIB_USE_CUDA)
         # Construct the path to the images folder relative to the script directory
         images_folder_path = os.path.join(script_directory, "images")
 
