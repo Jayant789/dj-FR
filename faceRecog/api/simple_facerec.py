@@ -11,7 +11,7 @@ class SimpleFacerec:
         self.known_face_names = []
 
         # Resize frame for a faster speed
-        self.frame_resizing = 1
+        self.frame_resizing = 0.25
 
     def load_encoding_images(self, images_path):
         """
@@ -60,7 +60,7 @@ class SimpleFacerec:
             face_width = x2 - x1
             face_height = y2 - y1
 
-            min_face_size_threshold = (50, 50)
+            min_face_size_threshold = (5, 5)
 
             if (
                 face_width >= min_face_size_threshold[0]

@@ -29,10 +29,10 @@ class VideoCamera(object):
                     "universe_domain": "googleapis.com",
                 }
             )
-            firebase_admin.initialize_app(cred)
-            VideoCamera.firebase_initialized = True
+            # firebase_admin.initialize_app(cred)
+            # VideoCamera.firebase_initialized = True
 
-        self.db = firestore.client()
+        # self.db = firestore.client()
         self.sfr = SimpleFacerec()
         script_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,8 +40,12 @@ class VideoCamera(object):
         images_folder_path = os.path.join(script_directory, "images")
 
         self.sfr.load_encoding_images(images_folder_path)
-
+        # camera_index = 1
+        rtsp_url = "rtsp://admin:Admin123@192.168.0.102:554/streaming/channels/101"
         self.cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Set the width of the frame
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Set the height of the frame
+
         # self.cap.set(cv2.CAP_PROP_FPS, frame_rate)  # Set the frame rate
         self.start_time = time.time()
         self.frames_processed = 0
@@ -86,7 +90,12 @@ class VideoCamera(object):
                 for face_loc, name, accuracy in zip(
                     face_locations, face_names, face_accuracies
                 ):
+                    resize_factor = 0.25
                     y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
+                    y1 = int(y1 / resize_factor)
+                    x2 = int(x2 / resize_factor)
+                    y2 = int(y2 / resize_factor)
+                    x1 = int(x1 / resize_factor)
 
                     if name == "Unknown":
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (128, 128, 128), 4)
@@ -118,9 +127,9 @@ class VideoCamera(object):
                             timestamp_id = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                             # Add the document to the "suspects" collection using the timestamp as the ID
-                            self.db.collection("Suspects").document(timestamp_id).set(
-                                document_data
-                            )
+                            # self.db.collection("Suspects").document(timestamp_id).set(
+                            #    document_data
+                            # )
                             print(name + " Updated in Database")
 
                             # Update the last_data_time
