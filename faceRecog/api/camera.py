@@ -6,6 +6,7 @@ from firebase_admin import firestore
 from datetime import datetime
 import time
 import os
+import dlib
 
 
 class VideoCamera(object):
@@ -35,7 +36,7 @@ class VideoCamera(object):
         # self.db = firestore.client()
         self.sfr = SimpleFacerec()
         script_directory = os.path.dirname(os.path.abspath(__file__))
-
+        print(dlib.DLIB_USE_CUDA)
         # Construct the path to the images folder relative to the script directory
         images_folder_path = os.path.join(script_directory, "images")
 
@@ -85,12 +86,13 @@ class VideoCamera(object):
                     face_locations,
                     face_names,
                     face_accuracies,
+                    resize_factor,  # Add this line for cropped faces
                 ) = self.sfr.detect_known_faces(frame)
 
                 for face_loc, name, accuracy in zip(
                     face_locations, face_names, face_accuracies
                 ):
-                    resize_factor = 0.25
+                    # resize_factor = 0.25
                     y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
                     y1 = int(y1 / resize_factor)
                     x2 = int(x2 / resize_factor)
