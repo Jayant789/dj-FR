@@ -30,10 +30,10 @@ class VideoCamera(object):
                     "universe_domain": "googleapis.com",
                 }
             )
-            # firebase_admin.initialize_app(cred)
-            # VideoCamera.firebase_initialized = True
+            firebase_admin.initialize_app(cred)
+            VideoCamera.firebase_initialized = True
 
-        # self.db = firestore.client()
+        self.db = firestore.client()
         self.sfr = SimpleFacerec()
         script_directory = os.path.dirname(os.path.abspath(__file__))
         print(dlib.DLIB_USE_CUDA)
@@ -42,7 +42,7 @@ class VideoCamera(object):
 
         self.sfr.load_encoding_images(images_folder_path)
         # camera_index = 1
-        rtsp_url = "rtsp://admin:Admin123@192.168.0.102:554/streaming/channels/101"
+        # rtsp_url = "rtsp://admin:Admin123@192.168.0.102:554/streaming/channels/101"
         self.cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Set the width of the frame
         # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Set the height of the frame
@@ -128,9 +128,9 @@ class VideoCamera(object):
                             timestamp_id = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                             # Add the document to the "suspects" collection using the timestamp as the ID
-                            # self.db.collection("Suspects").document(timestamp_id).set(
-                            #    document_data
-                            # )
+                            self.db.collection("Suspects").document(timestamp_id).set(
+                                document_data
+                            )
                             print(name + " Updated in Database")
 
                             # Update the last_data_time
